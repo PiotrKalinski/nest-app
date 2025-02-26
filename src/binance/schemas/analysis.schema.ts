@@ -18,7 +18,8 @@ export class MarketData {
     @Prop({ required: true})
     open: number
 
-
+    @Prop({ required: false})
+    interval: string
 
 }
 

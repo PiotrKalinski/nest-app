@@ -1,26 +1,44 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateBinanceDto } from './dto/create-binance.dto';
 import { UpdateBinanceDto } from './dto/update-binance.dto';
+import { InjectModel } from '@nestjs/mongoose'
+import { MarketData, MarketDataDocument } from './schemas/analysis.schema'
+import axios from 'axios';
 
+import {Model } from 'mongoose'
 @Injectable()
 export class BinanceService {
-  create(createBinanceDto: CreateBinanceDto) {
-    return 'This action adds a new binance';
+
+  private readonly logger = new Logger(BinanceService.name);
+  private readonly binanceUrl = 'https://api.binance.com'
+  constructor(@InjectModel(MarketData.name) private marketDataModel : Model<MarketDataDocument>) {}
+
+
+  async fetchAndAnalyze(startTime: number, endTime: number, interval: string, symbol: string ) {
+    console.log('asd')
+    try {
+
+      const biannceResponse = await axios.get(`${this.binanceUrl}/api/v3/klines`, {
+        params: {
+          symbol, interval, startTime, endTime
+        },
+        headers: {
+          'X-MBX-APIKEY': process.env.BINANCE_API_KEY || ''
+        }
+      })
+
+      console.log( {biannceResponse})
+
+
+    } catch (error) {
+      console.log( {resp: error.response})
+      console.log({ symbol})
+    }
+
   }
 
-  findAll() {
-    return `This action returns all binance`;
-  }
 
-  findOne(id: number) {
-    return `This action returns a #${id} binance`;
-  }
 
-  update(id: number, updateBinanceDto: UpdateBinanceDto) {
-    return `This action updates a #${id} binance`;
-  }
 
-  remove(id: number) {
-    return `This action removes a #${id} binance`;
-  }
+
 }
