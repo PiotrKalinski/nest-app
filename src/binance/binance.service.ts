@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MarketData, MarketDataDocument } from './schemas/analysis.schema';
 import axios from 'axios';
-
 import { Model } from 'mongoose';
+
 @Injectable()
 export class BinanceService {
   private readonly binanceUrl = 'https://api.binance.com';
+  private readonly logger = new Logger(BinanceService.name); // Initialize logger
+
   constructor(
     @InjectModel(MarketData.name)
     private marketDataModel: Model<MarketDataDocument>,
@@ -19,6 +21,7 @@ export class BinanceService {
     symbol: string,
   ) {
     try {
+      this.logger.log(`Fetching klines for symbol: ${symbol}, startTime: ${startTime}, endTime: ${endTime}, interval: ${interval}`);
       const klines = await axios.get(`${this.binanceUrl}/api/v3/klines`, {
         params: {
           symbol,
@@ -31,10 +34,11 @@ export class BinanceService {
         },
       });
 
-
       return klines.data;
     } catch (error) {
-      throw Error('Error while fetching data')
+      this.logger.error('Error fetching data from Binance API, using fallback data.', error.stack);
+      // Fallback data can be an empty array or some predefined data
+      return [];
     }
   }
 
@@ -54,16 +58,16 @@ export class BinanceService {
     });
   }
 
-  async saveAnalytics(analysisData : any[], symbol: string): Promise<MarketDataDocument[]> {
+  async saveAnalytics(analysisData: any[], symbol: string): Promise<MarketDataDocument[]> {
     try {
-      return Promise.all(analysisData.map( async (data) => {
-        console.log({data })
-        const createdRecord  = new this.marketDataModel({...data, symbol})
+      this.logger.log(`Saving analytics for symbol: ${symbol}`);
+      return Promise.all(analysisData.map(async (data) => {
+        const createdRecord = new this.marketDataModel({ ...data, symbol });
         return createdRecord.save();
-      }))
-    } catch (error ) {
-      throw Error('Error while saving data to databse')
+      }));
+    } catch (error) {
+      this.logger.error('Error while saving data to database', error.stack);
+      throw Error('Error while saving data to database');
     }
-
   }
 }
