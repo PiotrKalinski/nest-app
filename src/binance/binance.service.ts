@@ -1,6 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CreateBinanceDto } from './dto/create-binance.dto';
-import { UpdateBinanceDto } from './dto/update-binance.dto';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MarketData, MarketDataDocument } from './schemas/analysis.schema';
 import axios from 'axios';
@@ -36,8 +34,7 @@ export class BinanceService {
 
       return klines.data;
     } catch (error) {
-      console.log({ resp: error.response });
-      console.log({ symbol });
+      throw Error('Error while fetching data')
     }
   }
 
@@ -58,10 +55,15 @@ export class BinanceService {
   }
 
   async saveAnalytics(analysisData : any[], symbol: string): Promise<MarketDataDocument[]> {
-    return Promise.all(analysisData.map( async (data) => {
-      console.log({data })
-      const createdRecord  = new this.marketDataModel({...data, symbol})
-      return createdRecord.save();
-    }))
+    try {
+      return Promise.all(analysisData.map( async (data) => {
+        console.log({data })
+        const createdRecord  = new this.marketDataModel({...data, symbol})
+        return createdRecord.save();
+      }))
+    } catch (error ) {
+      throw Error('Error while saving data to databse')
+    }
+
   }
 }
